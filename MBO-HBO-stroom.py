@@ -300,29 +300,32 @@ if file_teller is not None:
     try:
         df_teller = pd.read_csv(file_teller, sep=",", encoding="utf-8")
     except UnicodeDecodeError:
-        try:
-            df_teller = pd.read_csv(file_teller, sep=",", encoding="latin-1")
-        except pd.errors.ParserError:
-            df_teller = pd.read_csv(file_teller, sep=";", engine="python")
+        df_teller = pd.read_csv(file_teller, sep=",", encoding="latin-1")
     except pd.errors.ParserError:
         df_teller = pd.read_csv(file_teller, sep=";", engine="python")
 
-import pandas as pd
-
 if file_noemer is not None:
-    try:
-        # 1. Standaard: DUO gebruikt CSV met komma + UTF-8
-        df_noemer = pd.read_csv(file_noemer, sep=",", encoding="utf-8")
-    except UnicodeDecodeError:
-        # 2. Fallback andere encoding
-        try:
-            df_noemer = pd.read_csv(file_noemer, sep=",", encoding="latin-1")
-        except pd.errors.ParserError:
-            # 3. Als het toch geen komma-gescheiden bestand is (bijv. ;), probeer dat
-            df_noemer = pd.read_csv(file_noemer, sep=";", engine="python")
-    except pd.errors.ParserError:
-        # 4. Direct bij ParserError op UTF-8: probeer ; als delimiter
-        df_noemer = pd.read_csv(file_noemer, sep=";", engine="python")
+    # Probeer een aantal veelvoorkomende combinaties expliciet
+    tried = False
+    for enc in ["utf-8", "latin-1", "utf-16", "utf-16le", "utf-16be"]:
+        for sep in [",", ";", "\t"]:
+            if tried:
+                break
+            try:
+                df_noemer = pd.read_csv(file_noemer, sep=sep, encoding=enc)
+                tried = True
+            except UnicodeDecodeError:
+                continue
+            except pd.errors.ParserError:
+                continue
+
+    if not tried:
+        st.error(
+            "Het noemerbestand kon niet worden ingelezen met standaard combinaties "
+            "van encoding en delimiter. Controleer het bestand of converteer het eerst "
+            "lokaal naar een 'normale' CSV (UTF-8, komma of puntkomma)."
+        )
+
 
 
 if df_teller is not None and df_noemer is not None:
