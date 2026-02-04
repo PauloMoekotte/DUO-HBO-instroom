@@ -300,19 +300,28 @@ if file_teller is not None:
     try:
         df_teller = pd.read_csv(file_teller, sep=",", encoding="utf-8")
     except UnicodeDecodeError:
-        df_teller = pd.read_csv(file_teller, sep=",", encoding="latin-1")
+        try:
+            df_teller = pd.read_csv(file_teller, sep=",", encoding="latin-1")
+        except pd.errors.ParserError:
+            df_teller = pd.read_csv(file_teller, sep=";", engine="python")
     except pd.errors.ParserError:
         df_teller = pd.read_csv(file_teller, sep=";", engine="python")
 
+import pandas as pd
+
 if file_noemer is not None:
     try:
-        # DUO gebruikt in principe UTF-8 + komma als delimiter
+        # 1. Standaard: DUO gebruikt CSV met komma + UTF-8
         df_noemer = pd.read_csv(file_noemer, sep=",", encoding="utf-8")
     except UnicodeDecodeError:
-        # fallback: andere encoding proberen
-        df_noemer = pd.read_csv(file_noemer, sep=",", encoding="latin-1")
+        # 2. Fallback andere encoding
+        try:
+            df_noemer = pd.read_csv(file_noemer, sep=",", encoding="latin-1")
+        except pd.errors.ParserError:
+            # 3. Als het toch geen komma-gescheiden bestand is (bijv. ;), probeer dat
+            df_noemer = pd.read_csv(file_noemer, sep=";", engine="python")
     except pd.errors.ParserError:
-        # als het toch geen komma-gescheiden bestand is (bijv. ;), probeer dat
+        # 4. Direct bij ParserError op UTF-8: probeer ; als delimiter
         df_noemer = pd.read_csv(file_noemer, sep=";", engine="python")
 
 
