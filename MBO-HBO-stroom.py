@@ -298,15 +298,22 @@ df_noemer = None
 
 if file_teller is not None:
     try:
-        df_teller = pd.read_csv(file_teller)
+        df_teller = pd.read_csv(file_teller, sep=",", encoding="utf-8")
     except UnicodeDecodeError:
-        df_teller = pd.read_csv(file_teller, encoding="latin-1")
+        df_teller = pd.read_csv(file_teller, sep=",", encoding="latin-1")
+    except pd.errors.ParserError:
+        df_teller = pd.read_csv(file_teller, sep=";", engine="python")
 
 if file_noemer is not None:
     try:
-        df_noemer = pd.read_csv(file_noemer)
+        # DUO gebruikt in principe UTF-8 + komma als delimiter
+        df_noemer = pd.read_csv(file_noemer, sep=",", encoding="utf-8")
     except UnicodeDecodeError:
-        df_noemer = pd.read_csv(file_noemer, encoding="latin-1")
+        # fallback: andere encoding proberen
+        df_noemer = pd.read_csv(file_noemer, sep=",", encoding="latin-1")
+    except pd.errors.ParserError:
+        # als het toch geen komma-gescheiden bestand is (bijv. ;), probeer dat
+        df_noemer = pd.read_csv(file_noemer, sep=";", engine="python")
 
 
 if df_teller is not None and df_noemer is not None:
